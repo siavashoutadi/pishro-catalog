@@ -1,0 +1,7 @@
+name: postgres
+version: 0.1.0
+description: Pishro packaging for postgres
+maintainers: []
+dependencies: []
+tags:
+  - postgres
