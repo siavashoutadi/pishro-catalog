@@ -1,0 +1,117 @@
+service:
+  # The name of the service
+  name: postgres
+
+image:
+  # The Docker image repository
+  repository: postgres
+  # The tag/version of the Docker image
+  tag: "16.8"
+
+# List of environment variables to be set for the service
+environments:
+  postgres_user:
+    key: POSTGRES_USER
+    value: postgres
+    isRequired: true
+    isSecret: false
+    description: "The username for the PostgreSQL database."
+  postgres_db:
+    key: POSTGRES_DB
+    value: postgres
+    isRequired: true
+    isSecret: false
+    description: "The name of the PostgreSQL database."
+  posgres_password:
+    key: POSTGRES_PASSWORD
+    value: {{ random_docker_secret(stack_name + '-postgres_password') }}
+    isRequired: true
+    isSecret: true
+    description: "The password for the PostgreSQL user."
+
+# Deploy configuration
+deploy:
+  # Resource configuration
+  # Some examples of resource allocation:
+  # Development/Testing:
+  # 0.5–1 CPU, 512 MB–1 GB RAM.
+  # Small Production Web App:
+  # 1–2 CPUs, 2–4 GB RAM is a common starting point.
+  # Medium/Large Production:
+  # 2–4+ CPUs, 4–16+ GB RAM, depending on workload and database size.
+  resources:
+    # Maximum resources the service can use
+    limits:
+      cpu: "1"
+      memory: "1G"
+    # Minimum resources the service requests
+    requests:
+      cpu: "0.5"
+      memory: "512M"
+  # Endpoint resolution mode: vip (virtual IP) or dnsrr (DNS round-robin)
+  endpoint_mode: vip
+
+  # Labels for the service, useful for identification and filtering
+  labels:
+    # Label indicating the service name
+    service: "postgres"
+    # Label indicating who deployed the service
+    deployedBy: "pishro"
+
+  # Placement constraints and preferences
+  placement:
+    # Constraints to determine where the service can run
+    constraints:
+      - "node.labels.stateful==true"
+    # Preferences for spreading tasks across nodes
+    preferences:
+      - spread: node.id
+
+  # Restart policy for the service
+  restart_policy:
+    # Condition under which the service should restart
+    # Options: none, on-failure, any
+    condition: on-failure
+    # Delay before restarting the service
+    delay: 5s
+    # Maximum number of restart attempts
+    max_attempts: 5
+    # Time window for evaluating restart attempts
+    window: 120s
+
+  # Update configuration for rolling updates
+  update_config:
+    # Number of tasks to update in parallel
+    parallelism: 1
+    # Delay between updates
+    delay: 10s
+    # Action to take on update failure
+    # Options: continue, rollback, pause
+    failure_action: rollback
+    # Time to monitor each update
+    monitor: 30s
+    # Maximum failure ratio allowed during updates
+    max_failure_ratio: 0.3
+    # Order of stopping and starting tasks during updates
+    # Options: stop-first, start-first
+    order: start-first
+
+  # Rollback configuration for rolling back updates
+  rollback_config:
+    # Number of tasks to roll back in parallel
+    parallelism: 1
+    # Delay between rollbacks
+    delay: 5s
+    # Action to take on rollback failure
+    # Options: continue, pause
+    failure_action: pause
+    # Time to monitor each rollback
+    monitor: 30s
+    # Maximum failure ratio allowed during rollbacks
+    max_failure_ratio: 0.3
+    # Order of stopping and starting tasks during rollbacks
+    # Options: stop-first, start-first
+    order: start-first
+
+networks:
+  - postgres_network
