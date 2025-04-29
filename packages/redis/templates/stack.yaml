@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  {{ service.name }}:
+    image: {{ image.repository }}:{{ image.tag }}
+    command: /bin/sh -c 'redis-server --appendonly yes --requirepass $$(cat /run/secrets/redis_environments)'
+    {% if environments[service.name] %}
+    environment:
+      {% for env, options in environments[service.name].items() %}
+      - {{ options.key }}={{ options.value }}
+      {% endfor %}
+    {% endif %}
+    secrets:
+      - redis_environments
+    {% if networks %}
+    networks:
+      {% for net in networks %}
+      - {{ net }}
+      {% endfor %}
+    {% endif %}
+    volumes:
+      - redis_data:/data
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "localhost", "-p", "6379", "-a", "$$(cat /run/secrets/redis_environments)", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    deploy:
+      mode: replicated
+      replicas: 1
+      endpoint_mode: {{ deploy.endpoint_mode }}
+      labels:
+        {% for key, value in deploy.labels.items() %}
+        {{ key }}: "{{ value }}"
+        {% endfor %}
+      placement:
+        constraints:
+          {% for constraint in deploy.placement.constraints %}
+          - {{ constraint }}
+          {% endfor %}
+        preferences:
+          {% for preference in deploy.placement.preferences %}
+          - spread: {{ preference.spread }}
+          {% endfor %}
+      resources:
+        limits:
+          cpus: '{{ deploy.resources.limits.cpu }}'
+          memory: {{ deploy.resources.limits.memory }}
+        reservations:
+          cpus: '{{ deploy.resources.requests.cpu }}'
+          memory: {{ deploy.resources.requests.memory }}
+      restart_policy:
+        condition: {{ deploy.restart_policy.condition }}
+        delay: {{ deploy.restart_policy.delay }}
+        max_attempts: {{ deploy.restart_policy.max_attempts }}
+        window: {{ deploy.restart_policy.window }}
+      update_config:
+        parallelism: {{ deploy.update_config.parallelism }}
+        delay: {{ deploy.update_config.delay }}
+        failure_action: {{ deploy.update_config.failure_action }}
+        monitor: {{ deploy.update_config.monitor }}
+        max_failure_ratio: {{ deploy.update_config.max_failure_ratio }}
+        order: {{ deploy.update_config.order }}
+      rollback_config:
+        parallelism: {{ deploy.rollback_config.parallelism }}
+        delay: {{ deploy.rollback_config.delay }}
+        failure_action: {{ deploy.rollback_config.failure_action }}
+        monitor: {{ deploy.rollback_config.monitor }}
+        max_failure_ratio: {{ deploy.rollback_config.max_failure_ratio }}
+        order: {{ deploy.rollback_config.order }}
+
+volumes:
+  redis_data:
+    driver: local
+
+networks:
+  {% for net in networks %}
+  {{ net}}:
+    external: true
+  {% endfor %}
+
+secrets:
+  redis_environments:
+    file: secrets/environments
