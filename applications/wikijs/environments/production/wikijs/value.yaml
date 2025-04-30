@@ -1,0 +1,16 @@
+networks:
+  - {{stack_name}}-wikijs
+
+ports: []
+
+environments:
+  db-pass:
+    key: DB_PASS
+    value: {{ random_docker_secret(stack_name + '-postgres_password') }}
+    isRequired: true
+    isSecret: true
+    description: "Database password for Wiki.js"
+
+deploy:
+  placement:
+    constraints: []

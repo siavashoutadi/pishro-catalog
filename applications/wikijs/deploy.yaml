@@ -1,0 +1,7 @@
+services:
+  wikijs:
+    package: wikijs
+    dependencies:
+      - postgres
+  postgres:
+    package: postgres

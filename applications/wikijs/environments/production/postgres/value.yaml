@@ -1,0 +1,22 @@
+networks:
+  - {{stack_name}}-wikijs
+
+environments:
+  postgres_user:
+    key: POSTGRES_USER
+    value: wikijs
+    isRequired: true
+    isSecret: false
+    description: "The username for the PostgreSQL database."
+  postgres_db:
+    key: POSTGRES_DB
+    value: wikijs
+    isRequired: true
+    isSecret: false
+    description: "The name of the PostgreSQL database."
+  posgres_password:
+    key: POSTGRES_PASSWORD
+    value: {{ random_docker_secret(stack_name + '-postgres_password') }}
+    isRequired: true
+    isSecret: true
+    description: "The password for the PostgreSQL user."
